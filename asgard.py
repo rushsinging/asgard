@@ -4,7 +4,7 @@
 import json
 from functools import partial
 from os import path, environ
-from sh import helm, curl, rm, cat
+from sh import curl, rm, cat, bash
 
 import profig
 
@@ -15,13 +15,19 @@ CONFIG_FILE = environ.get('ASGARD_CONFIG', path.join(environ.get('HOME'), '.asga
 def get_chart_repo(helm_repo):
     repo_list = helm.repo.list().stdout
 
+try:
+    from sh import helm
+except:
+    click.echo(click.style('*** Can\'t find helm in $PATH. ***', fg='red'))
+    helm = None
+
 
 @click.group()
 # TODO: Add global config, e.g., 'host', 'kube-context'
 @click.pass_context
 def asgard(ctx):
     '''
-    Asgard -- Deploy tool on k8s ,helm and chartmuseum.
+    Asgard -- A deploy tool bases on k8s ,helm and chartmuseum.
     Run `asgard init` first if this is your first time to use.
     '''
     cmd = ctx.invoked_subcommand
@@ -42,7 +48,7 @@ def asgard(ctx):
 @click.pass_context
 def init(ctx):
     '''
-    Init and set asgard's config.
+    Init and set asgard's config. Please run and follow it.
     '''
     cfg = profig.Config(CONFIG_FILE)
     cfg.sync()
@@ -81,11 +87,17 @@ def init(ctx):
 @asgard.command()
 @click.pass_context
 def info(ctx):
+    '''
+    Show Aagard's config.
+    '''
     click.echo(cat(CONFIG_FILE))
 
 @asgard.command()
 @click.pass_context
 def list(ctx):
+    '''
+    List releases already deployed.
+    '''
     click.echo(helm.list(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
@@ -97,6 +109,9 @@ def list(ctx):
 @click.argument('chart')
 @click.pass_context
 def fetch(ctx, chart):
+    '''
+    Fetch a chart and untar to current directory.
+    '''
     helm.fetch('--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart))
 
 
@@ -105,6 +120,9 @@ def fetch(ctx, chart):
 @click.argument('version')
 @click.pass_context
 def package(ctx, path, version):
+    '''
+    Package a current path to a new version and upload to chart repo.
+    '''
     # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
 
@@ -130,6 +148,9 @@ def package(ctx, path, version):
 @click.argument('chart')
 @click.pass_context
 def install(ctx, release,chart):
+    '''
+    Deploy a release from a chart.
+    '''
     click.echo(click.style('Updating Helm ...', fg='yellow'))
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
@@ -147,6 +168,9 @@ def install(ctx, release,chart):
 @click.argument('release')
 @click.pass_context
 def delete(ctx, release):
+    '''
+    Delete a release.
+    '''
     click.echo(helm.delete(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
@@ -160,6 +184,9 @@ def delete(ctx, release):
 @click.argument('chart')
 @click.pass_context
 def upgrade(ctx, release, chart):
+    '''
+    Upgrade a release.
+    '''
     click.echo(click.style('Updating Helm ...', fg='yellow'))
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
