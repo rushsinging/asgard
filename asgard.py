@@ -3,6 +3,7 @@
 
 import json
 from functools import partial
+from semantic_version import Version
 from os import path, environ
 from sh import curl, rm, cat, bash
 
@@ -18,6 +19,18 @@ def get_chart_repo(helm_repo):
         name, repo = l.split()
         if name == helm_repo:
             return repo
+
+def get_chart_version(helm_repo, path):
+    click.echo(click.style('Updating Helm ...', fg='yellow'))
+    helm.repo.update()
+    click.echo(click.style('Updating Helm [OK]', fg='green'))
+    repo_list = str(helm.search(path).stdout, encoding='utf-8')
+    chart = '%s/%s' % (helm_repo, path)
+    for l in repo_list.split('\n')[1:]:
+        target, version, v = l.split()[:3]
+        if target == chart:
+            return version
+
 
 try:
     from sh import helm
@@ -123,7 +136,7 @@ def fetch(ctx, chart):
 
 @asgard.command()
 @click.argument('path')
-@click.argument('version')
+@click.argument('version', default='')
 @click.pass_context
 def package(ctx, path, version):
     '''
@@ -131,6 +144,12 @@ def package(ctx, path, version):
     '''
     # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
+
+    if not version:
+        click.echo(click.style('No version specified. Reading from chart_repo ...', fg='yellow'))
+        version = Version(get_chart_version(ctx.obj.get('helm_repo'), path))
+        version = str(version.next_patch())
+        click.echo(click.style('Get new version %s' % version, fg='green'))
 
     click.echo(click.style('Packaging ...', fg='yellow'))
     helm.package('--app-version', version, '--version', version, path)
