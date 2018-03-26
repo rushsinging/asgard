@@ -18,7 +18,7 @@ def get_chart_repo(helm_repo):
 try:
     from sh import helm
 except:
-    click.echo(click.style('*** Can\'t find helm in $PATH. ***', fg='red'))
+    click.echo(click.style('*** Can\'t find helm in $PATH. Please install it. ***', fg='red'))
     helm = None
 
 
