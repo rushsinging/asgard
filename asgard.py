@@ -16,6 +16,10 @@ CONFIG_FILE = path.join(environ.get('HOME'), '.asgard/config')
 @click.group()
 @click.pass_context
 def asgard(ctx):
+    '''
+    Asgard -- Deploy tool on k8s ,helm and chartmuseum.
+    Run `asgard init` first if this is your first time to use.
+    '''
     cmd = ctx.invoked_subcommand
     keyword = 'helm'
     if cmd == 'init':
@@ -33,6 +37,9 @@ def asgard(ctx):
 @asgard.command()
 @click.pass_context
 def init(ctx):
+    '''
+    Init and set asgard's config.
+    '''
     cfg = profig.Config(CONFIG_FILE)
     cfg.sync()
 
