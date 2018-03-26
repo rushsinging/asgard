@@ -14,6 +14,10 @@ CONFIG_FILE = environ.get('ASGARD_CONFIG', path.join(environ.get('HOME'), '.asga
 
 def get_chart_repo(helm_repo):
     repo_list = helm.repo.list().stdout
+    for l in repo_list.split()[1:]:
+        name, repo = l.split()
+        if name == helm_repo:
+            return repo
 
 try:
     from sh import helm
@@ -131,7 +135,7 @@ def package(ctx, path, version):
     tar = '%s-%s.tgz' % (path, version)
 
     click.echo(click.style('Uploading ...', fg='yellow'))
-    cmd_result = curl('-F', 'chart=@%s' % tar, ctx.obj.get('chart_repo') + '/api/charts')
+    cmd_result = curl('-F', 'chart=@%s' % tar, ctx.obj.get('helm_repo') + '/api/charts')
 
     click.echo(click.style('Cleaning ...', fg='yellow'))
     rm(tar)
