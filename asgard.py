@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # from __future__ import unicode_literals
 
-from sh import helm
+import json
+from functools import partial
 from os import path, environ
+from sh import helm, curl, rm
 
 import profig
 
@@ -68,20 +70,39 @@ def list(ctx):
 
 
 @asgard.command()
+@click.argument('chart')
 @click.pass_context
-def fetch(ctx):
-    pass
+def fetch(ctx, chart):
+    helm.fetch('--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart))
 
 
 @asgard.command()
+@click.argument('path')
+@click.argument('version')
 @click.pass_context
-def package(ctx):
+def package(ctx, path, version):
+    # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
-    pass
+
+    click.echo(click.style('Packaging ...', fg='yellow'))
+    helm.package('--app-version', version, '--version', version, path)
+    tar = '%s-%s.tgz' % (path, version)
+
+    click.echo(click.style('Uploading ...', fg='yellow'))
+    cmd_result = curl('-F', 'chart=@%s' % tar, ctx.obj.get('chart_repo') + '/api/charts')
+
+    click.echo(click.style('Cleaning ...', fg='yellow'))
+    rm(tar)
+
+    result = json.loads(cmd_result.stdout)
+    if result.get('saved'):
+        click.echo(click.style('SUCCESS!', fg='green'))
+    else:
+        click.echo(click.style('FAILED!: %s' % result.get('error'), fg='red'))
 
 
 @asgard.command()
-@click.option('--release', '-r', default='')
+@click.option('--release', '-r', default='', help='the name of the release to add')
 @click.argument('chart')
 @click.pass_context
 def install(ctx, release,chart):
@@ -122,3 +143,5 @@ def upgrade(ctx, release, chart):
 
 if __name__ == '__main__':
     asgard(obj={})
+else:
+    asgard = partial(asgard, obj={})
