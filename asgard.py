@@ -4,16 +4,20 @@
 import json
 from functools import partial
 from os import path, environ
-from sh import helm, curl, rm
+from sh import helm, curl, rm, cat
 
 import profig
 
 import click
 
-CONFIG_FILE = path.join(environ.get('HOME'), '.asgard/config')
+CONFIG_FILE = environ.get('ASGARD_CONFIG', path.join(environ.get('HOME'), '.asgard/config'))
+
+def get_chart_repo(helm_repo):
+    repo_list = helm.repo.list().stdout
 
 
 @click.group()
+# TODO: Add global config, e.g., 'host', 'kube-context'
 @click.pass_context
 def asgard(ctx):
     cmd = ctx.invoked_subcommand
@@ -43,25 +47,19 @@ def init(ctx):
     setting_key = 'helm.kube_context'
     kube_context = click.prompt(
         'Please the name of your k8s context',
-        default=cfg.get(setting_key))
+        default=cfg.get(setting_key, ''))
     cfg[setting_key] = kube_context
-
-    setting_key = 'helm.chart_repo'
-    chart_repo = click.prompt(
-        'Please enter uri for chart repo',
-        default=cfg.get(setting_key))
-    cfg[setting_key] = chart_repo
 
     setting_key = 'helm.tiller_host'
     tiller_host = click.prompt(
         'Please enter uri for tiller',
-        default=cfg.get(setting_key))
+        default=cfg.get(setting_key, ''))
     cfg[setting_key] = tiller_host
 
     setting_key = 'helm.tiller_namespace'
     tiller_namespace = click.prompt(
         'Please enter namespace for tiller',
-        default=cfg.get(setting_key))
+        default=cfg.get(setting_key, ''))
     cfg[setting_key] = tiller_namespace
 
     setting_key = 'helm.helm_repo'
@@ -72,6 +70,11 @@ def init(ctx):
 
     cfg.sync()
 
+
+@asgard.command()
+@click.pass_context
+def info(ctx):
+    click.echo(cat(CONFIG_FILE))
 
 @asgard.command()
 @click.pass_context
