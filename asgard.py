@@ -45,6 +45,8 @@ def asgard(ctx):
 
     cfg = profig.Config(CONFIG_FILE)
     cfg.sync()
+    if cfg.section(keyword).get('chart_repo'):
+        click.echo(click.style('WARNING: the config `chart_repo` has been desperate!\n', fg='yellow'))
     ctx.obj.update(cfg.section(keyword))
 
 
