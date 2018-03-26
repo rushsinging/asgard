@@ -40,6 +40,12 @@ def init(ctx):
     helm.init('-c')
     click.echo(click.style('Init Helm [OK]', fg='green'))
 
+    setting_key = 'helm.kube_context'
+    kube_context = click.prompt(
+        'Please the name of your k8s context',
+        default=cfg.get(setting_key))
+    cfg[setting_key] = kube_context
+
     setting_key = 'helm.chart_repo'
     chart_repo = click.prompt(
         'Please enter uri for chart repo',
@@ -51,6 +57,12 @@ def init(ctx):
         'Please enter uri for tiller',
         default=cfg.get(setting_key))
     cfg[setting_key] = tiller_host
+
+    setting_key = 'helm.tiller_namespace'
+    tiller_namespace = click.prompt(
+        'Please enter namespace for tiller',
+        default=cfg.get(setting_key))
+    cfg[setting_key] = tiller_namespace
 
     setting_key = 'helm.helm_repo'
     helm_repo = click.prompt(
@@ -66,6 +78,8 @@ def init(ctx):
 def list(ctx):
     click.echo(helm.list(
         '--host', ctx.obj.get('tiller_host'),
+        '--tiller-namespace', ctx.obj.get('tiller_namespace'),
+        '--kube-context', ctx.obj.get('kube_context'),
     ))
 
 
@@ -112,6 +126,8 @@ def install(ctx, release,chart):
 
     click.echo(helm.install(
         '--host', ctx.obj.get('tiller_host'),
+        '--tiller-namespace', ctx.obj.get('tiller_namespace'),
+        '--kube-context', ctx.obj.get('kube_context'),
         '--name', release or chart,
         '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
@@ -122,7 +138,10 @@ def install(ctx, release,chart):
 @click.pass_context
 def delete(ctx, release):
     click.echo(helm.delete(
-        '--host', ctx.obj.get('tiller_host'), release, '--purge'
+        '--host', ctx.obj.get('tiller_host'),
+        '--tiller-namespace', ctx.obj.get('tiller_namespace'),
+        '--kube-context', ctx.obj.get('kube_context'),
+        release, '--purge'
     ))
 
 
@@ -137,6 +156,8 @@ def upgrade(ctx, release, chart):
 
     click.echo(helm.upgrade(
         '--host', ctx.obj.get('tiller_host'),
+        '--tiller-namespace', ctx.obj.get('tiller_namespace'),
+        '--kube-context', ctx.obj.get('kube_context'),
         release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
 
