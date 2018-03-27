@@ -27,9 +27,15 @@ def get_chart_version(helm_repo, path):
     repo_list = str(helm.search(path).stdout, encoding='utf-8')
     chart = '%s/%s' % (helm_repo, path)
     for l in repo_list.split('\n')[1:]:
+        l = l.strip()
+        if not l:
+            continue
+
+        print(l)
         target, version, v = l.split()[:3]
         if target == chart:
             return version
+    return '0.0.0'
 
 
 try:
