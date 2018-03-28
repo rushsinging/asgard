@@ -6,7 +6,11 @@ with open('./requirements.txt', 'r') as f:
 
 setup(
     name='asgard',
-    version='0.0.1',
+    url='http://git.iguokr.com/yggdrasil/asgard',
+    license='BSD',
+    author='Jade',
+    description='Asgard -- A deploy tool bases on k8s ,helm and chartmuseum.',
+    version='0.0.2',
     py_modules=['asgard'],
     install_requires=install_requires,
     entry_points={

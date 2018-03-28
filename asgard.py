@@ -31,7 +31,6 @@ def get_chart_version(helm_repo, path):
         if not l:
             continue
 
-        print(l)
         target, version, v = l.split()[:3]
         if target == chart:
             return version
@@ -139,6 +138,12 @@ def fetch(ctx, chart):
     '''
     helm.fetch('--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart))
 
+@asgard.command()
+@click.argument('path')
+@click.pass_context
+def lint(ctx, path):
+    click.echo(helm.lint(path))
+
 
 @asgard.command()
 @click.argument('path')
@@ -150,6 +155,8 @@ def package(ctx, path, version):
     '''
     # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
+
+    path = path.strip('/')
 
     if not version:
         click.echo(click.style('No version specified. Reading from chart_repo ...', fg='yellow'))
@@ -175,27 +182,6 @@ def package(ctx, path, version):
 
 
 @asgard.command()
-@click.option('--release', '-r', default='', help='the name of the release to add')
-@click.argument('chart')
-@click.pass_context
-def install(ctx, release,chart):
-    '''
-    Deploy a release from a chart.
-    '''
-    click.echo(click.style('Updating Helm ...', fg='yellow'))
-    helm.repo.update()
-    click.echo(click.style('Updating Helm [OK]', fg='green'))
-
-    click.echo(helm.install(
-        '--host', ctx.obj.get('tiller_host'),
-        '--tiller-namespace', ctx.obj.get('tiller_namespace'),
-        '--kube-context', ctx.obj.get('kube_context'),
-        '--name', release or chart,
-        '%s/%s' % (ctx.obj.get('helm_repo'), chart),
-    ))
-
-
-@asgard.command()
 @click.argument('release')
 @click.pass_context
 def delete(ctx, release):
@@ -212,9 +198,11 @@ def delete(ctx, release):
 
 @asgard.command()
 @click.option('--release', '-r', default='')
+@click.option('--version', '-v', default='')
+@click.option('--dry_run', is_flag=True, default=False)
 @click.argument('chart')
 @click.pass_context
-def upgrade(ctx, release, chart):
+def upgrade(ctx, release, version, dry_run, chart):
     '''
     Upgrade a release.
     '''
@@ -226,7 +214,7 @@ def upgrade(ctx, release, chart):
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
         '--kube-context', ctx.obj.get('kube_context'),
-        release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
+        '-i', release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
 
 
