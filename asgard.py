@@ -11,14 +11,27 @@ import profig
 
 import click
 
+import sys
+if sys.version > '3':
+    PY3 = True
+else:
+    PY3 = False
+
 CONFIG_FILE = environ.get(
     'ASGARD_CONFIG', path.join(
         environ.get('VIRTUAL_ENV', environ.get('HOME', '')),
         '.asgard/config'))
 
 def get_chart_repo(helm_repo):
-    repo_list = str(helm.repo.list().stdout, encoding='utf-8')
+    if PY3:
+        repo_list = str(helm.repo.list().stdout, encoding='utf-8')
+    else:
+        repo_list = str(helm.repo.list().stdout)
+
     for l in repo_list.split('\n')[1:]:
+        if not l:
+            continue
+
         name, repo = l.split()
         if name == helm_repo:
             return repo
@@ -27,7 +40,11 @@ def get_chart_version(helm_repo, path):
     click.echo(click.style('Updating Helm ...', fg='yellow'))
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
-    repo_list = str(helm.search(path).stdout, encoding='utf-8')
+    if PY3:
+        repo_list = str(helm.search(path).stdout, encoding='utf-8')
+    else:
+        repo_list = helm.search(path).stdout
+
     chart = '%s/%s' % (helm_repo, path)
     for l in repo_list.split('\n')[1:]:
         l = l.strip()
