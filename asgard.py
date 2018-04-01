@@ -11,7 +11,10 @@ import profig
 
 import click
 
-CONFIG_FILE = environ.get('ASGARD_CONFIG', path.join(environ.get('HOME'), '.asgard/config'))
+CONFIG_FILE = environ.get(
+    'ASGARD_CONFIG', path.join(
+        environ.get('VIRTUAL_ENV', environ.get('HOME', '')),
+        '.asgard/config'))
 
 def get_chart_repo(helm_repo):
     repo_list = str(helm.repo.list().stdout, encoding='utf-8')
@@ -65,6 +68,10 @@ def asgard(ctx):
     cfg.sync()
     if cfg.section(keyword).get('chart_repo'):
         click.echo(click.style('WARNING: the config `chart_repo` has been desperate!\n', fg='yellow'))
+
+    if not environ.get('VIRTUAL_ENV'):
+        click.echo(click.style('WARNING: You are using global settings!\n', fg='yellow'))
+
     ctx.obj.update(cfg.section(keyword))
 
 
@@ -114,6 +121,9 @@ def info(ctx):
     '''
     Show Aagard's config.
     '''
+
+    click.echo(click.style(CONFIG_FILE + ' :', fg='yellow'))
+    click.echo()
     click.echo(cat(CONFIG_FILE))
 
 @asgard.command()
