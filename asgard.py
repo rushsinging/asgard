@@ -45,13 +45,11 @@ def get_release(release, tiller_host):
     else:
         release_list = str(helm.list('--host', tiller_host).stdout)
 
-    print release_list
     for l in release_list.split('\n')[1:]:
         if not l:
             continue
 
         name, v, _ = l.split('\t', 2)
-        print name, v, name==release, release
         if name.strip() == release:
             return v.strip()
 
@@ -192,6 +190,9 @@ def fetch(ctx, chart):
 @click.argument('path')
 @click.pass_context
 def lint(ctx, path):
+    '''
+    Check chart.
+    '''
     click.echo(helm.lint(path))
 
 
@@ -199,6 +200,9 @@ def lint(ctx, path):
 @click.argument('keyword')
 @click.pass_context
 def search(ctx, keyword):
+    '''
+    Search chart.
+    '''
     click.echo(helm.search(keyword))
 
 
