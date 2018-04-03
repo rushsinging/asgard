@@ -39,6 +39,22 @@ def get_chart_repo(helm_repo):
         if name == helm_repo:
             return repo
 
+def get_release(release, tiller_host):
+    if PY3:
+        release_list = str(helm.list('--host', tiller_host).stdout, encoding='utf-8')
+    else:
+        release_list = str(helm.list('--host', tiller_host).stdout)
+
+    print release_list
+    for l in release_list.split('\n')[1:]:
+        if not l:
+            continue
+
+        name, v, _ = l.split('\t', 2)
+        print name, v, name==release, release
+        if name.strip() == release:
+            return v.strip()
+
 def get_chart_version(helm_repo, path):
     click.echo(click.style('Updating Helm ...', fg='yellow'))
     helm.repo.update()
@@ -180,6 +196,13 @@ def lint(ctx, path):
 
 
 @asgard.command()
+@click.argument('keyword')
+@click.pass_context
+def search(ctx, keyword):
+    click.echo(helm.search(keyword))
+
+
+@asgard.command()
 @click.argument('path')
 @click.argument('version', default='')
 @click.pass_context
@@ -234,7 +257,7 @@ def delete(ctx, release):
 @click.option('--release', '-r', default='')
 @click.option('--version', '-v', default='')
 @click.option('--dry_run', is_flag=True, default=False)
-@click.argument('chart', nargs=-1)
+@click.argument('chart')
 @click.pass_context
 def upgrade(ctx, release, version, dry_run, chart):
     '''
@@ -244,9 +267,16 @@ def upgrade(ctx, release, version, dry_run, chart):
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
 
+    # TODO: 参数
+    # TODO: 批量更新
 
+    click.echo(click.style(
+        'Release %s \'s current revision is %s' % (
+            release or chart, get_release(release or chart, ctx.obj.get('tiller_host'))),
+        fg='green'))
     click.echo(click.style('Updating %s to %s ...' % (
-        release or chart, version or get_chart_version(ctx.obj.get('helm_repo')))))
+        release or chart, version or get_chart_version(ctx.obj.get('helm_repo'), release or chart)),
+        fg='yellow'))
     click.echo(helm.upgrade(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
