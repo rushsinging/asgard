@@ -245,7 +245,8 @@ def upgrade(ctx, release, version, dry_run, chart):
     click.echo(click.style('Updating Helm [OK]', fg='green'))
 
 
-    click.echo(click.style('Updating %s to %s ...' % (release or chart, version or 'latest')))
+    click.echo(click.style('Updating %s to %s ...' % (
+        release or chart, version or get_chart_version(ctx.obj.get('helm_repo')))))
     click.echo(helm.upgrade(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
