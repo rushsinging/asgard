@@ -3,12 +3,10 @@
 
 import json
 from functools import partial
-from semantic_version import Version
 from os import path, environ
-from sh import curl, rm, cat, bash
 
+from semantic_version import Version
 import profig
-
 import click
 
 import sys
@@ -16,6 +14,11 @@ if sys.version > '3':
     PY3 = True
 else:
     PY3 = False
+
+try:
+    from sh import curl, rm, cat
+except:
+    from pbs import curl, rm, cat
 
 CONFIG_FILE = environ.get(
     'ASGARD_CONFIG', path.join(
@@ -163,6 +166,10 @@ def fetch(ctx, chart):
     '''
     Fetch a chart and untar to current directory.
     '''
+    click.echo(click.style('Updating Helm ...', fg='yellow'))
+    helm.repo.update()
+    click.echo(click.style('Updating Helm [OK]', fg='green'))
+
     helm.fetch('--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart))
 
 @asgard.command()
@@ -227,7 +234,7 @@ def delete(ctx, release):
 @click.option('--release', '-r', default='')
 @click.option('--version', '-v', default='')
 @click.option('--dry_run', is_flag=True, default=False)
-@click.argument('chart')
+@click.argument('chart', nargs=-1)
 @click.pass_context
 def upgrade(ctx, release, version, dry_run, chart):
     '''
@@ -237,10 +244,13 @@ def upgrade(ctx, release, version, dry_run, chart):
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
 
+
+    click.echo(click.style('Updating %s to %s ...' % (release or chart, version or 'latest')))
     click.echo(helm.upgrade(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
         '--kube-context', ctx.obj.get('kube_context'),
+        '--timeout', '10', '--force', '--recreate-pods', '--wait',
         '-i', release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
 

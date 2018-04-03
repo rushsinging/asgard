@@ -3,3 +3,4 @@ profig==0.4.1
 sh==1.12.14
 colorama==0.3.9
 semantic_version==2.6.0
+pbs==0.110

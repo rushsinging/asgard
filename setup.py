@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
+
 from setuptools import setup
 
-with open('./requirements.txt', 'r') as f:
+path = os.path.dirname(os.path.abspath(__file__))
+# with open(os.path.join(path, 'requirements.txt'), 'r') as f:
+with open('requirements.txt', 'r') as f:
     install_requires = f.read()
+
+print(install_requires)
 
 setup(
     name='asgard',
@@ -10,7 +16,9 @@ setup(
     license='BSD',
     author='Jade',
     description='Asgard -- A deploy tool bases on k8s ,helm and chartmuseum.',
-    version='0.0.2',
+    version='0.0.12',
+    zip_safe=False,
+    include_package_data=True,
     py_modules=['asgard'],
     install_requires=install_requires,
     entry_points={
@@ -19,4 +27,3 @@ setup(
         ]
     }
 )
-
