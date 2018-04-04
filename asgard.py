@@ -16,6 +16,7 @@ else:
     PY3 = False
 
 try:
+    import sh
     from sh import curl, rm, cat
 except:
     from pbs import curl, rm, cat
@@ -296,6 +297,22 @@ def upgrade(ctx, release, version, dry_run, chart):
         '--timeout', '10', '--force', '--recreate-pods', '--wait',
         '-i', release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
+
+@asgard.command()
+@click.argument('release')
+@click.pass_context
+def reload(ctx, release):
+    '''
+    Restart pods of release
+    '''
+    click.echo(sh.kubectl.get.pods(
+        '--context', ctx.obj.get('kube_context'), '-l', 'release=%s' % release))
+    if not click.confirm('Continue?'):
+        return
+    click.echo(sh.kubectl.delete.pods(
+        '--context', ctx.obj.get('kube_context'), '-l', 'release=%s' % release))
+    click.echo(sh.kubectl.get.pods(
+        '--context', ctx.obj.get('kube_context'), '-l', 'release=%s' % release))
 
 
 if __name__ == '__main__':
