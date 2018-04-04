@@ -53,7 +53,7 @@ def get_release(release, tiller_host):
         if name.strip() == release:
             return v.strip()
 
-def get_chart_version(helm_repo, path):
+def get_chart_version(helm_repo, path, version=''):
     click.echo(click.style('Updating Helm ...', fg='yellow'))
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
@@ -174,9 +174,10 @@ def list(ctx):
 
 
 @asgard.command()
+@click.option('--version', '-v', default='')
 @click.argument('chart')
 @click.pass_context
-def fetch(ctx, chart):
+def fetch(ctx, version, chart):
     '''
     Fetch a chart and untar to current directory.
     '''
@@ -184,7 +185,14 @@ def fetch(ctx, chart):
     helm.repo.update()
     click.echo(click.style('Updating Helm [OK]', fg='green'))
 
-    helm.fetch('--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart))
+    fetch_version = version or get_chart_version(ctx.obj.get('helm_repo'), chart)
+    click.echo(click.style('Fetching %s@%s' % (chart, fetch_version), fg='yellow'))
+    args = ['--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart)]
+    if version:
+        args.append('--version')
+        args.append(version)
+    helm.fetch(args)
+    click.echo(click.style('SUCCESS!', fg='green'))
 
 @asgard.command()
 @click.argument('path')
