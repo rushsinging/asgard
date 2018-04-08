@@ -225,13 +225,22 @@ def package(ctx, path, version):
     # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
 
+    click.echo(click.style('Updating Helm ...', fg='yellow'))
+    helm.repo.update()
+    click.echo(click.style('Updating Helm [OK]=\n', fg='green'))
+
     path = path.strip('/')
 
+    chart_name = path.split('/')[-1]
     if not version:
         click.echo(click.style('No version specified. Reading from chart_repo ...', fg='yellow'))
-        version = Version(get_chart_version(ctx.obj.get('helm_repo'), path))
+        version = Version(get_chart_version(ctx.obj.get('helm_repo'), chart_name))
         version = str(version.next_patch())
         click.echo(click.style('Get new version %s' % version, fg='green'))
+
+    click.echo(click.style('Updateing dependency ...', fg='yellow'))
+    helm.dependency.update(path)
+    click.echo(click.style('Done!\n', fg='green'))
 
     click.echo(click.style('Packaging ...', fg='yellow'))
     helm.package('--app-version', version, '--version', version, path)
