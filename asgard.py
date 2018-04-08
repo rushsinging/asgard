@@ -233,6 +233,7 @@ def package(ctx, path, version):
         version = Version(get_chart_version(ctx.obj.get('helm_repo'), path))
         version = str(version.next_patch())
         click.echo(click.style('Get new version %s' % version, fg='green'))
+    Version(version)
 
     click.echo(click.style('Packaging ...', fg='yellow'))
     helm.package('--app-version', version, '--version', version, path)
