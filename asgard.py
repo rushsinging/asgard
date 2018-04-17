@@ -212,6 +212,7 @@ def fetch(ctx, version, chart):
     if version:
         args.append('--version')
         args.append(version)
+    print args
     helm.fetch(args)
     click.echo(click.style('SUCCESS!', fg='green'))
 
@@ -321,8 +322,8 @@ def upgrade(ctx, release, version, dry_run, chart):
     click.echo(helm.upgrade(
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
-        '--kube-context', ctx.obj.get('kube_context'),
-        # '--timeout', '10', '--force', '--recreate-pods', '--wait',
+        '--kube-context', ctx.obj.get('kube_context'), '--force',
+        # '--timeout', '10', '--recreate-pods', '--wait',
         '-i', release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
 
