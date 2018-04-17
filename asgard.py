@@ -18,13 +18,15 @@ else:
 try:
     import sh
     from sh import curl, rm, cat
-except:
+except Exception:
     from pbs import curl, rm, cat
+
 
 CONFIG_FILE = environ.get(
     'ASGARD_CONFIG', path.join(
         environ.get('VIRTUAL_ENV', environ.get('HOME', '')),
         '.asgard/config'))
+
 
 def get_chart_repo(helm_repo):
     if PY3:
@@ -40,6 +42,7 @@ def get_chart_repo(helm_repo):
         if name == helm_repo:
             return repo
 
+
 def get_release(release, tiller_host):
     if PY3:
         release_list = str(helm.list('--host', tiller_host).stdout, encoding='utf-8')
@@ -54,10 +57,9 @@ def get_release(release, tiller_host):
         if name.strip() == release:
             return v.strip()
 
+
 def get_chart_version(helm_repo, path, version=''):
-    click.echo(click.style('Updating Helm ...', fg='yellow'))
-    helm.repo.update()
-    click.echo(click.style('Updating Helm [OK]', fg='green'))
+    update_helm()
     if PY3:
         repo_list = str(helm.search(path).stdout, encoding='utf-8')
     else:
@@ -77,9 +79,15 @@ def get_chart_version(helm_repo, path, version=''):
 
 try:
     from sh import helm
-except:
+except Exception:
     click.echo(click.style('*** Can\'t find helm in $PATH. Please install it. ***', fg='red'))
     helm = None
+
+
+def update_helm():
+    click.echo(click.style('Updating Helm ...', fg='yellow'))
+    helm.repo.update()
+    click.echo(click.style('Updating Helm [OK]\n', fg='green'))
 
 
 @click.group()
@@ -161,6 +169,7 @@ def info(ctx):
     click.echo()
     click.echo(cat(CONFIG_FILE))
 
+
 @asgard.command()
 @click.pass_context
 def list(ctx):
@@ -181,19 +190,31 @@ def list(ctx):
 def fetch(ctx, version, chart):
     '''
     Fetch a chart and untar to current directory.
-    '''
-    click.echo(click.style('Updating Helm ...', fg='yellow'))
-    helm.repo.update()
-    click.echo(click.style('Updating Helm [OK]', fg='green'))
 
-    fetch_version = version or get_chart_version(ctx.obj.get('helm_repo'), chart)
+    version: x.x.x-xxx
+
+    chart: [Repo name]/[Chart name]
+
+    '''
+    update_helm()
+
+    if len(chart.split('/')) == 2:
+        repo, chart_name = chart.split('/')
+    else:
+        click.echo(click.style('No repo specified, using default(%s)...\n' % ctx.obj.get('helm_repo'), fg='yellow'))
+        repo = ctx.obj.get('helm_repo')
+        chart_name = chart
+        chart = '%s/%s' % (repo, chart_name)
+
+    fetch_version = version or get_chart_version(repo, chart_name)
     click.echo(click.style('Fetching %s@%s' % (chart, fetch_version), fg='yellow'))
-    args = ['--untar', '%s/%s' % (ctx.obj.get('helm_repo'), chart)]
+    args = ['--untar', chart]
     if version:
         args.append('--version')
         args.append(version)
     helm.fetch(args)
     click.echo(click.style('SUCCESS!', fg='green'))
+
 
 @asgard.command()
 @click.argument('path')
@@ -212,6 +233,7 @@ def search(ctx, keyword):
     '''
     Search chart.
     '''
+    update_helm()
     click.echo(helm.search(keyword))
 
 
@@ -226,9 +248,7 @@ def package(ctx, path, version):
     # helm package --app-version 0.1.9 --version 0.1.9 fantuan-base
     # curl -F "chart=@mychart-0.1.0.tgz" http://localhost:8080/api/charts
 
-    click.echo(click.style('Updating Helm ...', fg='yellow'))
-    helm.repo.update()
-    click.echo(click.style('Updating Helm [OK]=\n', fg='green'))
+    update_helm()
 
     path = path.strip('/')
 
@@ -286,9 +306,7 @@ def upgrade(ctx, release, version, dry_run, chart):
     '''
     Upgrade a release.
     '''
-    click.echo(click.style('Updating Helm ...', fg='yellow'))
-    helm.repo.update()
-    click.echo(click.style('Updating Helm [OK]', fg='green'))
+    update_helm()
 
     # TODO: 参数
     # TODO: 批量更新
@@ -304,9 +322,10 @@ def upgrade(ctx, release, version, dry_run, chart):
         '--host', ctx.obj.get('tiller_host'),
         '--tiller-namespace', ctx.obj.get('tiller_namespace'),
         '--kube-context', ctx.obj.get('kube_context'),
-        '--timeout', '10', '--force', '--recreate-pods', '--wait',
+        # '--timeout', '10', '--force', '--recreate-pods', '--wait',
         '-i', release or chart, '%s/%s' % (ctx.obj.get('helm_repo'), chart),
     ))
+
 
 @asgard.command()
 @click.argument('release')

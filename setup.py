@@ -17,7 +17,7 @@ setup(
     author='Jade',
     author_email='littleyu.hit@gmail.com',
     description='Asgard -- A deploy tool bases on k8s ,helm and chartmuseum.',
-    version='0.0.15',
+    version='0.0.18',
     zip_safe=False,
     include_package_data=True,
     py_modules=['asgard'],
