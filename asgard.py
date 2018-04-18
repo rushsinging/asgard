@@ -212,7 +212,6 @@ def fetch(ctx, version, chart):
     if version:
         args.append('--version')
         args.append(version)
-    print args
     helm.fetch(args)
     click.echo(click.style('SUCCESS!', fg='green'))
 
